@@ -17,7 +17,7 @@ differs is the **interaction model**:
 | Model | Directory | Roddy sends you | You respond with | Sync? |
 |---|---|---|---|---|
 | **Channel transport mode** (a.k.a. passthrough) | [`transport-mode/`](./transport-mode) | an **event** (`message.inbound`, …) | `200 OK` (ack) — you reply later via the **send API** | async |
-| **Custom skills** (generic use case) | `custom-skills/` *(coming)* | a tool call: `{ metadata, arguments }` | the **result** in the HTTP response body | sync |
+| **Custom skills** (generic use case) | [`custom-skills/`](./custom-skills) | a tool call: `{ metadata, arguments }` | the **result** in the HTTP response body | sync |
 
 - **Transport mode** turns a channel into pure transport: Roddy forwards each
   inbound message to your system, and you send replies back through the public
@@ -35,7 +35,8 @@ webhook-verification/   # the shared security primitive, done right + a test vec
   python/   node/
 transport-mode/         # receive events (async) + send via the public API (+ media)
   python/   node/
-custom-skills/          # (coming) sync tool call: receive {metadata,arguments}, return a result
+custom-skills/          # sync tool call: receive {metadata,arguments}, return a structured result
+  python/   node/
 ```
 
 ## Security model (read once, applies everywhere)
@@ -76,7 +77,6 @@ does all of this.
 
 ## Roadmap
 
-- `custom-skills/` examples (sync tool-call model).
 - An OpenAPI specification for the API (Postman import + client/SDK generation).
 - Official SDKs.
 

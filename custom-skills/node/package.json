@@ -1,0 +1,14 @@
+{
+  "name": "roddy-custom-skill-node",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Roddy custom skill example (synchronous generic-use-case webhook, Express)",
+  "scripts": {
+    "start": "node skill.js",
+    "selftest": "node selftest.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
