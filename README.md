@@ -28,6 +28,15 @@ differs is the **interaction model**:
 Both verify the signature identically; only the payload and the response
 contract differ.
 
+## The third model: no webhook at all
+
+[`web-chat-headless/`](./web-chat-headless) is the inverse of transport mode:
+**Roddy's agent** answers, and **your frontend or backend** is the interface.
+Your client calls Roddy's web-chat API directly (streaming or synchronous),
+authenticating end users with **visitor tokens** your backend signs with the
+channel's secret, or server-to-server as an OAuth integration. Nothing is
+delivered to you, so there is no signature to verify.
+
 ## Repository layout
 
 ```
@@ -36,6 +45,8 @@ webhook-verification/   # the shared security primitive, done right + a test vec
 transport-mode/         # receive events (async) + send via the public API (+ media)
   python/   node/
 custom-skills/          # sync tool call: receive {metadata,arguments}, return a structured result
+  python/   node/
+web-chat-headless/      # Roddy's agent in YOUR interface: visitor tokens + integration relay
   python/   node/
 ```
 
