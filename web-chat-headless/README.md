@@ -5,8 +5,9 @@ app, or backend talks to Roddy's chat API and Roddy's agent answers. This is
 the opposite of [`../transport-mode`](../transport-mode): there, *your* brain
 replies through our channel; here, *our* brain replies through your interface.
 
+Step-by-step guide: **Docs → Guías → Chat web en tu propio sitio o app**.
 Full reference (endpoints, claims, error catalog): **Docs → Referencia → API de
-chat web** in your Roddy app.
+chat web**. Both in your Roddy app.
 
 Pick your language:
 

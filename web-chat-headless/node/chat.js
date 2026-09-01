@@ -62,6 +62,18 @@ async function streamTurn(token, messages) {
       const payload = line.slice("data: ".length);
       if (payload === "[DONE]") continue;
       const chunk = JSON.parse(payload);
+      if (chunk.type === "finish") {
+        // A turn no agent answered (human-only channel, transport mode) ends at
+        // `finish` and never sends [DONE] — verified on the wire. Stopping on
+        // the protocol's own end-of-turn keeps a keep-alive connection from
+        // holding the loop open, and is what a hand-rolled client needs.
+        return assistantText;
+      }
+      if (chunk.type === "error") {
+        // A mid-stream failure keeps HTTP 200: the stream says so, not the
+        // status code.
+        throw new Error(`stream error: ${chunk.errorText}`);
+      }
       if (chunk.type === "text-delta") {
         assistantText += chunk.delta ?? "";
         process.stdout.write(chunk.delta ?? "");

@@ -69,6 +69,17 @@ def stream_turn(token: str, messages: list[dict]) -> list[dict]:
             break
         chunk = json.loads(payload)
         kind = chunk.get("type")
+        if kind == "finish":
+            # A turn no agent answered (human-only channel, transport mode) ends
+            # at `finish` and never sends [DONE] — verified on the wire. This
+            # reader would also exit when the body closes, but stopping on the
+            # protocol's own end-of-turn keeps a keep-alive connection from
+            # holding the loop open, and is what a hand-rolled client needs.
+            break
+        if kind == "error":
+            # A mid-stream failure keeps HTTP 200: the stream says so, not the
+            # status code.
+            raise SystemExit(f"\nstream error: {chunk.get('errorText')}")
         if kind == "text-delta":
             delta = chunk.get("delta", "")
             assistant_text.append(delta)
