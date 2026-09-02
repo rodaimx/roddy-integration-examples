@@ -9,8 +9,12 @@ Step-by-step guide: **Docs → Guías → Chat web en tu propio sitio o app**.
 Full reference (endpoints, claims, error catalog): **Docs → Referencia → API de
 chat web**. Both in your Roddy app.
 
-Pick your language:
+Pick your entry point:
 
+- [`acme-portal/`](./acme-portal) — **start here**: a made-up product with its
+  own login and the chat inside it, showing the identity *decisions* (what
+  `sub` is, where the secret lives, token refresh, what operators see) as a
+  runnable React + Express proof of concept
 - [`python/`](./python) — PyJWT token minting + terminal streaming client
 - [`node/`](./node) — zero-dep HS256 minting + terminal streaming client (Node 18+)
 
