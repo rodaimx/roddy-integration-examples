@@ -66,6 +66,22 @@ if order is None:
     return not_found_envelope()          # same answer as "does not exist"
 ```
 
+### Mapping `contact_id` to your own user
+
+`contact_id` is Roddy's id for the person, stable and present on every channel —
+it is the field you authorize against. Turning it into *your* user id:
+
+- **If your backend drives the chat** ([`../web-chat-headless/`](../web-chat-headless))
+  it declares a `subject` — your own id — and `metadata["subject"]` is that same
+  value echoed back. Use it directly, no lookup needed. It is **absent** on every
+  other channel, so read it with `.get("subject")`.
+- **On any channel**, store the pair the first time you see it: the relay's turn
+  response returns `contact_id`, and for WhatsApp or email you map it when
+  someone identifies themselves.
+
+Never rebuild `contact_id` yourself from a subject. How Roddy derives it is an
+internal detail that can change; read it from the payload.
+
 Answer a denied lookup exactly like a missing one. "That order is not yours"
 confirms the order exists, which is the fact you were protecting.
 

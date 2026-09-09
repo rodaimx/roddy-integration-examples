@@ -43,7 +43,7 @@ app.post('/webhook', (req, res) => {
   const args = payload.arguments || {}; // shape = your use case's parameter schema
   console.log(
     `[skill] use_case=${metadata.use_case_id} contact=${metadata.contact_id} ` +
-    `arguments=${JSON.stringify(args)}`
+    `subject=${metadata.subject} arguments=${JSON.stringify(args)}`
   );
 
   const result = handleTool(args, metadata);
@@ -51,6 +51,13 @@ app.post('/webhook', (req, res) => {
   // HTTP 200 + the structured envelope. A non-200 is a tool failure to Roddy.
   return res.json(result);
 });
+
+// Your own mapping: Roddy contact id -> your user id. Stand-in for a real
+// table; you populate it the first time you see a contact. On a relay
+// conversation you do not need it — metadata.subject is already your id.
+function lookupYourUser(contactId) {
+  return null;
+}
 
 // Your skill's business logic. Return a structured envelope:
 //   { messages: [ {type: text|document|image, ...}, ... ],   // >= 1, user-facing
@@ -64,8 +71,23 @@ app.post('/webhook', (req, res) => {
 // invoice for order 10432" produces exactly that call, whoever they are.
 // Scope every lookup by metadata.contact_id (or your own id for that person)
 // and return a not-found envelope when it does not match.
+//
+// RESOLVING metadata.contact_id TO YOUR OWN USER. contact_id is Roddy's id and
+// exists on every channel — it is what you authorize against. To map it:
+//   - Headless relay (your backend drives the chat and declares a `subject`):
+//     metadata.subject is that same id, echoed back. Use it directly. It is
+//     ABSENT on every other channel, so treat undefined as normal.
+//   - Any channel: store the pair the first time you see it. The relay's turn
+//     response carries contact_id (see web-chat-headless/), and for WhatsApp or
+//     email you map it when someone identifies themselves.
+// Never rebuild contact_id yourself from a subject — how Roddy derives it is
+// internal and can change. Read it from the payload.
 function handleTool(args, metadata) {
   const orderId = args.order_id || 'UNKNOWN';
+  // Who is this in YOUR system? On a relay conversation, the subject you
+  // declared comes back; otherwise use the mapping you stored.
+  const yourUserId = metadata.subject ?? lookupYourUser(metadata.contact_id);
+  void yourUserId; // (this demo scopes by contact_id below)
   // ... look the order up in your system here — SCOPED to this contact, e.g.
   //     const order = await orders.find({ id: orderId, customer: metadata.contact_id });
   //     if (!order) return notFoundEnvelope(orderId);

@@ -24,11 +24,15 @@ ngrok http 8000                  # set the https URL as your use case's webhook
   "metadata": {
     "agent_id": "…", "client_id": "…", "use_case_id": "…", "webhook_id": "…",
     "contact_id": "…", "channel_id": "…",
-    "contact": { "name": "…", "phone": "…", "email": "…" }
+    "contact": { "name": "…", "phone": "…", "email": "…" },
+    "subject": "…"   // only when a headless relay declared one; absent otherwise
   },
   "arguments": { /* your tool's args — shape = the use case's parameter schema */ }
 }
 ```
+
+Treat `metadata` as **extensible**: authorize against the fields you know
+and ignore any you do not recognise.
 
 ## What you return (structured — recommended)
 HTTP **200** with an envelope separating what the **user** sees from what the

@@ -37,6 +37,37 @@ authenticating end users with **visitor tokens** your backend signs with the
 channel's secret, or server-to-server as an OAuth integration. Nothing is
 delivered to you, so there is no signature to verify.
 
+## Combining two surfaces: who is this person?
+
+Most real integrations use **two** of these at once — your backend drives the
+chat (`web-chat-headless/`) and the agent calls back into your system
+(`custom-skills/`). That raises one question the individual guides do not
+answer: when a skill webhook arrives, **which of your users is it about?**
+
+Two identifiers, and it is worth being precise about them:
+
+| | What it is | Where you get it |
+|---|---|---|
+| `subject` | **Your** id for your user. You choose it and declare it on every relay turn. | You already have it |
+| `contact_id` | **Roddy's** id for that person on that channel. Derived from your subject. Stable, and present on every channel. | The relay turn response, and every skill webhook |
+
+**`contact_id` is what you authorize against** — it is the one that exists no
+matter how the conversation started. Two ways to map it to your own user, and
+you can use either:
+
+1. **The relay turn returns it.** `POST /` with `Accept: application/json`
+   answers `{"contact_id": …, "text": …, "turn_status": {…}}`. At that moment
+   you already know who your user is, so store the pair once:
+   `save(contact_id, your_user_id)`.
+2. **The skill webhook echoes your subject.** When the conversation came from a
+   relay turn, `metadata.subject` is your own id, right there beside
+   `metadata.contact_id` — no lookup, no state. It is **absent** on channels
+   where nobody declared one (WhatsApp, email, the widget), so read it
+   defensively and fall back to your stored mapping.
+
+**Do not derive `contact_id` yourself** from the subject. How Roddy builds it is
+internal and can change; read it from the payload and you are immune.
+
 ## Repository layout
 
 ```

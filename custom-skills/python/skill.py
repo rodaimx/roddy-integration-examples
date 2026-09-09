@@ -54,7 +54,8 @@ async def webhook(request: Request) -> Response:
     arguments = payload.get("arguments", {})  # shape = your use case's parameter schema
     print(
         f"[skill] use_case={metadata.get('use_case_id')} "
-        f"contact={metadata.get('contact_id')} arguments={arguments}"
+        f"contact={metadata.get('contact_id')} "
+        f"subject={metadata.get('subject')} arguments={arguments}"
     )
 
     result = handle_tool(arguments, metadata)
@@ -62,6 +63,17 @@ async def webhook(request: Request) -> Response:
     # Return HTTP 200 with the structured envelope. A non-200 is treated as a
     # tool failure by Roddy.
     return Response(content=json.dumps(result), media_type="application/json")
+
+
+def lookup_your_user(contact_id: str) -> str | None:
+    """Your own mapping: Roddy contact id -> your user id.
+
+    Stand-in for a real table. You populate it the first time you see a
+    contact — from the relay turn's `contact_id` (headless), or when someone
+    identifies themselves on WhatsApp or email. On a relay conversation you
+    do not need it at all: `metadata["subject"]` is already your id.
+    """
+    return None
 
 
 def handle_tool(arguments: dict, metadata: dict) -> dict:
@@ -90,8 +102,31 @@ def handle_tool(arguments: dict, metadata: dict) -> dict:
     are. Scope every lookup by `metadata["contact_id"]` (or your own id for
     that person) and return a not-found envelope when it does not match —
     otherwise the skill is an open read of your whole order table.
+
+    **Resolving `contact_id` to YOUR user.** `metadata["contact_id"]` is
+    Roddy's id and works on every channel — it is what you authorize against.
+    How you turn it into your own user depends on where the conversation
+    came from:
+
+    - **Headless relay** (your backend drives the chat and declares a
+      `subject`): `metadata["subject"]` is that same id, echoed back. Use it
+      directly — no lookup, no state. It is ABSENT on every other channel,
+      so read it with `.get("subject")` and treat absence as normal.
+    - **Any channel** (WhatsApp, email, the widget, or the relay): store the
+      pair the first time you see it. The relay's turn response carries
+      `contact_id` (see `web-chat-headless/python/integration_example.py`);
+      for other channels, map it the first time someone identifies
+      themselves.
+
+    Never rebuild `contact_id` yourself from a subject: how Roddy derives it
+    is internal and can change. Read it from the payload.
     """
     order_id = arguments.get("order_id", "UNKNOWN")
+    # Who is this, in YOUR system? On a relay conversation the subject you
+    # declared comes back; otherwise fall back to the mapping you stored
+    # against Roddy's contact id.
+    your_user_id = metadata.get("subject") or lookup_your_user(metadata["contact_id"])
+    del your_user_id  # (this demo scopes by contact_id below)
     # ... look the order up in your system here — SCOPED to this contact, e.g.
     #     order = orders.find(id=order_id, customer=metadata["contact_id"])
     #     if order is None: return _not_found_envelope(order_id)

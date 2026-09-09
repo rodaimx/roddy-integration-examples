@@ -17,6 +17,9 @@ relay's equivalent of the visitor token's `name` / `email` claims.
 
 Reading the conversation back uses the same declared subject:
 `GET /history?channel_id=…&subject=…`.
+
+If you ALSO expose custom skills to this agent, see the `contact_id` note in
+`main()` below: it is what links a skill webhook back to your own user.
 """
 
 from __future__ import annotations
@@ -90,6 +93,21 @@ def main() -> None:
     text = sys.argv[1] if len(sys.argv) > 1 else "hola"
     result = converse_sync(get_access_token(), text)
     status = result["turn_status"]
+
+    # THE LINE THAT MATTERS IF YOU ALSO USE CUSTOM SKILLS.
+    #
+    # `contact_id` is Roddy's id for the person this turn is about — derived
+    # from the `subject` you declared. When the agent later calls one of your
+    # custom skills, the webhook arrives with `metadata.contact_id`, and that
+    # is the field you authorize against. Store this pair ONCE and every skill
+    # call afterwards resolves to your own user:
+    #
+    #     your_db.save_chat_contact(contact_id=result["contact_id"], user_id=SUBJECT)
+    #
+    # Never derive it yourself from the subject: how Roddy builds it is an
+    # internal detail that can change. Read it from here.
+    print(f"contact_id: {result['contact_id']}  (tu usuario: {SUBJECT})")
+
     if status["agent_ran"]:
         print(result["text"])
     else:
