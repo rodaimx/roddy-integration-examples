@@ -8,6 +8,12 @@
 // your users the turn is for (`subject` — you are accountable for it), and
 // asks for one JSON body instead of a stream (Accept: application/json).
 //
+// Send `subject_name` (and optionally `subject_email`) too. They are optional
+// and easy to skip, and skipping them is the mistake worth avoiding:
+// `subject` is an id, so without a name your operators get an inbox of ids,
+// and the agent reads that stand-in as the name of whoever it is talking to.
+// They are the relay's equivalent of the visitor token's name/email claims.
+//
 // Reading the conversation back uses the same declared subject:
 //   GET /history?channel_id=…&subject=…
 
@@ -17,6 +23,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const BASE_URL = process.env.RODDY_WEB_CHAT_URL.replace(/\/+$/, "");
+// Display hints for the SAME person SUBJECT identifies. Keep them together:
+// an id that changes while a hardcoded name stays put mislabels the contact.
+const SUBJECT = process.env.SUBJECT ?? "crm-user-42";
+const SUBJECT_NAME = process.env.SUBJECT_NAME ?? "Usuario CRM 42";
+const SUBJECT_EMAIL = process.env.SUBJECT_EMAIL || null;
 
 async function getAccessToken() {
   const response = await fetch(process.env.AUTH_TOKEN_URL, {
@@ -52,8 +63,12 @@ const response = await fetch(`${BASE_URL}/`, {
     channel_id: process.env.CHANNEL_ID,
     // Who this turn is for — YOUR id for the end user. Same subject, same
     // conversation. Refused outside the integration mode.
-    subject: process.env.SUBJECT ?? "crm-user-42",
-    subject_name: "Usuario CRM 42",
+    subject: SUBJECT,
+    // Optional, and worth sending: this is what your operators and the agent
+    // see instead of the raw id. Omit them and the contact shows up as a
+    // stand-in name that sticks.
+    subject_name: SUBJECT_NAME,
+    ...(SUBJECT_EMAIL ? { subject_email: SUBJECT_EMAIL } : {}),
     trigger: "submit-message",
     id: "server-job",
     messages: [

@@ -41,6 +41,18 @@ of your users each turn is for (`subject`). Also gives you the **synchronous**
 mode: send `Accept: application/json` and get one JSON body instead of a
 stream.
 
+- Fields: `subject` (your user id — decides which conversation), plus optional
+  `subject_name` / `subject_email`. They are the relay's counterpart to the
+  visitor token's `name` / `email` claims.
+- **Send a name.** `subject` is an id, so without `subject_name` your
+  operators get an inbox of ids and the agent reads the stand-in as the name
+  of whoever it is talking to. It is optional in the API and the easiest
+  thing to skip; skipping it is the one mistake this example is trying to
+  save you.
+- `subject*` is refused on every other path (`400 subject_not_allowed`): an
+  integration declaring *its* users answers for them, a browser saying "I am
+  user 12345" does not.
+
 ## The wire format
 
 `POST RODDY_WEB_CHAT_URL/` takes the Roddy context (`channel_id`, and

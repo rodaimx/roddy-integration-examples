@@ -56,9 +56,21 @@ app.post('/webhook', (req, res) => {
 //   { messages: [ {type: text|document|image, ...}, ... ],   // >= 1, user-facing
 //     agent_result: "short summary for the LLM" }             // LLM-facing
 // URLs must be http(s) and reachable by Roddy. No extra top-level keys.
+//
+// AUTHORIZE THE ARGUMENTS AGAINST `metadata`, NOT JUST THE SIGNATURE. The HMAC
+// proves Roddy called you; it says nothing about whether the person in this
+// conversation may see what the arguments ask for. `args` is filled in by the
+// model from the conversation, so an end user can steer it: "give me the
+// invoice for order 10432" produces exactly that call, whoever they are.
+// Scope every lookup by metadata.contact_id (or your own id for that person)
+// and return a not-found envelope when it does not match.
 function handleTool(args, metadata) {
   const orderId = args.order_id || 'UNKNOWN';
-  // ... look the order up in your system here ...
+  // ... look the order up in your system here — SCOPED to this contact, e.g.
+  //     const order = await orders.find({ id: orderId, customer: metadata.contact_id });
+  //     if (!order) return notFoundEnvelope(orderId);
+  // Skipping that check is the whole vulnerability: the id came from the
+  // model, which got it from whatever the user typed.
   return {
     messages: [
       { type: 'text', text: `Your order ${orderId} ships tomorrow. Here's the invoice:` },

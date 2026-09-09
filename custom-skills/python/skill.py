@@ -81,9 +81,22 @@ def handle_tool(arguments: dict, metadata: dict) -> dict:
     - No extra top-level keys (the envelope is validated strictly).
 
     This demo pretends to look up an order and returns a message + its invoice.
+
+    **Authorize the arguments against `metadata`, not just the signature.** The
+    HMAC proves Roddy called you; it says nothing about whether the person in
+    this conversation may see what the arguments ask for. `arguments` is filled
+    in by the model from the conversation, so an end user can steer it: "give
+    me the invoice for order 10432" produces exactly that call, whoever they
+    are. Scope every lookup by `metadata["contact_id"]` (or your own id for
+    that person) and return a not-found envelope when it does not match —
+    otherwise the skill is an open read of your whole order table.
     """
     order_id = arguments.get("order_id", "UNKNOWN")
-    # ... look the order up in your system here ...
+    # ... look the order up in your system here — SCOPED to this contact, e.g.
+    #     order = orders.find(id=order_id, customer=metadata["contact_id"])
+    #     if order is None: return _not_found_envelope(order_id)
+    # Skipping that check is the whole vulnerability: the id came from the
+    # model, which got it from whatever the user typed.
     return {
         "messages": [
             {

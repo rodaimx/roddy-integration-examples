@@ -9,6 +9,12 @@ the turn is for (`subject` — you are accountable for it), and asks for one
 JSON body instead of a stream (`Accept: application/json`). Useful when the
 consumer is a server job, not a browser.
 
+Send `subject_name` (and optionally `subject_email`) too. They are optional
+and easy to skip, and skipping them is the mistake worth avoiding: `subject`
+is an id, so without a name your operators get an inbox of ids, and the agent
+reads that stand-in as the name of whoever it is talking to. They are the
+relay's equivalent of the visitor token's `name` / `email` claims.
+
 Reading the conversation back uses the same declared subject:
 `GET /history?channel_id=…&subject=…`.
 """
@@ -25,6 +31,10 @@ RODDY_WEB_CHAT_URL = os.environ["RODDY_WEB_CHAT_URL"].rstrip("/")
 AUTH_TOKEN_URL = os.environ["AUTH_TOKEN_URL"]
 CHANNEL_ID = os.environ["CHANNEL_ID"]
 SUBJECT = os.environ.get("SUBJECT", "crm-user-42")
+# Display hints for the SAME person `SUBJECT` identifies. Keep them together:
+# an id that changes while a hardcoded name stays put mislabels the contact.
+SUBJECT_NAME = os.environ.get("SUBJECT_NAME", "Usuario CRM 42")
+SUBJECT_EMAIL = os.environ.get("SUBJECT_EMAIL") or None
 
 
 def get_access_token() -> str:
@@ -46,7 +56,11 @@ def converse_sync(token: str, text: str) -> dict:
             # Who this turn is for — YOUR id for the end user. Same subject,
             # same conversation. Refused outside the integration mode.
             "subject": SUBJECT,
-            "subject_name": "Usuario CRM 42",
+            # Optional, and worth sending: this is what your operators and the
+            # agent see instead of the raw id. Omit them and the contact shows
+            # up as a stand-in name that sticks.
+            "subject_name": SUBJECT_NAME,
+            **({"subject_email": SUBJECT_EMAIL} if SUBJECT_EMAIL else {}),
             "trigger": "submit-message",
             "id": "server-job",
             "messages": [

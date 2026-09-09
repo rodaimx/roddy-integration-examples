@@ -44,4 +44,35 @@ reachable by Roddy. Unknown top-level keys are rejected.
 > A legacy **text** mode exists (return a plain-text body instead of the
 > envelope) but is basic — prefer structured.
 
+## Authorize the arguments, not just the caller
+
+The HMAC signature proves **Roddy** called you. It says nothing about whether
+the person in this conversation may see what the call asks for — and those are
+different questions.
+
+`arguments` is filled in by the model from the conversation, so an end user
+steers it: "give me the invoice for order 10432" produces exactly that call,
+whoever they are. Treat every argument as user-supplied input, the same way you
+would a query string.
+
+`metadata` is what you authorize against — it carries `client_id`,
+`contact_id`, `channel_id` and the contact's own details, and Roddy resolved
+those from the channel, not from anything said in the chat:
+
+```python
+# Scope the lookup. Never trust the id alone.
+order = orders.find(id=arguments["order_id"], customer=metadata["contact_id"])
+if order is None:
+    return not_found_envelope()          # same answer as "does not exist"
+```
+
+Answer a denied lookup exactly like a missing one. "That order is not yours"
+confirms the order exists, which is the fact you were protecting.
+
+If a skill can act as more than one of your users, decide who it acts as
+**before** it runs, from `metadata` — never from a parameter the model can
+fill in. The read-only [`notify`](./notify) example takes the other way out:
+it ships GETs only, precisely because it has no per-contact authorization
+story.
+
 See each language's README for run steps + the exact request/response shapes.
